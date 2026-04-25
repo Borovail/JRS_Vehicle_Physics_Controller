@@ -1,0 +1,47 @@
+Low Poly Skull Model - Free 3D Asset
+
+Bring a dark, eerie touch to your game with this free low poly skull model – perfect for horror, fantasy, or post-apocalyptic environments.
+
+✅ Features
+
+- Low-poly design
+- Optimized for performance (mobile and VR-ready)
+- PBR-ready materials
+- UV mapped
+- Clean topology
+
+🎮 Use Cases
+
+- Environment decoration (dungeons, caves, crypts, battlefields)
+- Inventory items / collectibles
+- Background props in cutscenes
+
+Unity prefab ready to use
+
+Note: The demo scene uses Unity 2022 with URP. However, the asset can be used in all versions of Unity, though minor adjustments may be required. For HDRP, you will need to convert the URP materials.
+
+
+
+
+
+
+
+
+
+Technical details
+
+📦 Package Includes
+2x FBX model
+5x Textures (2K - Base Color, MetalicSmoothness, Normal)
+4x Material (Variations)
+8x Prefab
+
+SM_Skull01
+	LOD0: 1684
+	LOD1: 710
+	LOD2: 456
+
+SM_Skull02
+	LOD0: 772
+	LOD1: 474
+	LOD2: 287
