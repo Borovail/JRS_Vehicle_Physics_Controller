@@ -861,20 +861,20 @@ MonoBehaviour:
   stabilityYawDamping: 2.25
   stabilityLateralDamping: 0.7
   gearRatios:
-  - 3.1
-  - 2.05
-  - 1.45
-  - 1.1
-  - 0.85
-  finalDriveRatio: 3.42
-  idleRPM: 850
-  maxEngineRPM: 6500
-  shiftThreshold: 5600
-  downshiftThreshold: 2200
-  shiftHysteresisRPM: 600
-  gearShiftDelay: 0.45
-  clutchResponse: 8
-  drivetrainTorqueScale: 0.55
+  - 4
+  - 2.55
+  - 1.7
+  - 1.23
+  - 0.86
+  finalDriveRatio: 3.55
+  idleRPM: 700
+  maxEngineRPM: 5800
+  shiftThreshold: 4700
+  downshiftThreshold: 1750
+  shiftHysteresisRPM: 800
+  gearShiftDelay: 0.6
+  clutchResponse: 5.5
+  drivetrainTorqueScale: 0.5
   enable4x4: 1
   frontLeftDustParticleSystem: {fileID: 6884106027164329529}
   frontRightDustParticleSystem: {fileID: 5222807419408461362}
@@ -882,6 +882,10 @@ MonoBehaviour:
   rearRightDustParticleSystem: {fileID: 5222807419898368077}
   engineAudioSource: {fileID: 5801607900594789545}
   engineStartAudioSource: {fileID: 5801607901068656314}
+  engineMinPitch: 0.55
+  engineMaxPitch: 1.45
+  engineLoadPitchBoost: 0.14
+  enginePitchResponse: 3.5
 --- !u!54 &2199125344732967282
 Rigidbody:
   m_ObjectHideFlags: 0

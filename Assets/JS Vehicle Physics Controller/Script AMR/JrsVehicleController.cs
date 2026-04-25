@@ -56,16 +56,16 @@ public class JrsVehicleController : MonoBehaviour
     public float stabilityLateralDamping = 0.7f;
 
     [Header("Transmission")]
-    public float[] gearRatios = { 3.1f, 2.05f, 1.45f, 1.1f, 0.85f };
-    public float finalDriveRatio = 3.42f;
-    public float idleRPM = 850f;
-    public float maxEngineRPM = 6500f;
-    public float shiftThreshold = 5600f;
-    public float downshiftThreshold = 2200f;
-    public float shiftHysteresisRPM = 600f;
-    public float gearShiftDelay = 0.45f;
-    public float clutchResponse = 8f;
-    public float drivetrainTorqueScale = 0.55f;
+    public float[] gearRatios = { 4.0f, 2.55f, 1.7f, 1.23f, 0.86f };
+    public float finalDriveRatio = 3.55f;
+    public float idleRPM = 700f;
+    public float maxEngineRPM = 5800f;
+    public float shiftThreshold = 4700f;
+    public float downshiftThreshold = 1750f;
+    public float shiftHysteresisRPM = 800f;
+    public float gearShiftDelay = 0.6f;
+    public float clutchResponse = 5.5f;
+    public float drivetrainTorqueScale = 0.5f;
     private int currentGear = 1; // Variable to track the current gear
 
     public bool enable4x4 = false; // Option to enable 4-wheel drive
@@ -78,6 +78,12 @@ public class JrsVehicleController : MonoBehaviour
 
     public AudioSource engineAudioSource; // Assign this in the Inspector
     public AudioSource engineStartAudioSource; // Assign this in the Inspector
+
+    [Header("Engine Sound")]
+    public float engineMinPitch = 0.55f;
+    public float engineMaxPitch = 1.45f;
+    public float engineLoadPitchBoost = 0.14f;
+    public float enginePitchResponse = 3.5f;
 
     private bool hasStartedMoving = false;
     private WheelCollider[] cachedWheels;
@@ -223,14 +229,7 @@ public class JrsVehicleController : MonoBehaviour
         SetDustParticleSystemState(rearLeftDustParticleSystem, shouldPlayDustParticles);
         SetDustParticleSystemState(rearRightDustParticleSystem, shouldPlayDustParticles);
 
-        // Calculate the target pitch based on the current speed and direction
-        float targetPitch = Mathf.Lerp(0.6f, 2f, Mathf.InverseLerp(idleRPM, maxEngineRPM, lastEngineRPM));
-
-        // Smoothly adjust the pitch towards the target pitch
-        if (engineAudioSource)
-        {
-            engineAudioSource.pitch = Mathf.Lerp(engineAudioSource.pitch, targetPitch, Time.deltaTime * 5f);
-        }
+        UpdateEngineSound();
 
 
         // Play the engine start sound if the vehicle just starts moving
@@ -277,7 +276,7 @@ public class JrsVehicleController : MonoBehaviour
     void UpdateEngineRPM()
     {
         float connectedRPM = GetEstimatedRPMForGear(currentGear);
-        float launchRPM = Mathf.Lerp(idleRPM, idleRPM + 1800f, Mathf.Abs(lastThrottleInput));
+        float launchRPM = Mathf.Lerp(idleRPM, idleRPM + 1300f, Mathf.Abs(lastThrottleInput));
 
         if (lastSpeedKmph < 8f)
         {
@@ -286,6 +285,20 @@ public class JrsVehicleController : MonoBehaviour
 
         lastTargetEngineRPM = Mathf.Clamp(connectedRPM, idleRPM, maxEngineRPM);
         lastEngineRPM = Mathf.Lerp(lastEngineRPM <= 0f ? idleRPM : lastEngineRPM, lastTargetEngineRPM, Mathf.Clamp01(clutchResponse * Time.fixedDeltaTime));
+    }
+
+    void UpdateEngineSound()
+    {
+        if (!engineAudioSource)
+        {
+            return;
+        }
+
+        float rpmPitch = Mathf.Lerp(engineMinPitch, engineMaxPitch, Mathf.InverseLerp(idleRPM, maxEngineRPM, lastEngineRPM));
+        float loadPitch = Mathf.Abs(lastThrottleInput) * engineLoadPitchBoost;
+        float targetPitch = Mathf.Clamp(rpmPitch + loadPitch, engineMinPitch, engineMaxPitch + engineLoadPitchBoost);
+
+        engineAudioSource.pitch = Mathf.Lerp(engineAudioSource.pitch, targetPitch, Mathf.Clamp01(enginePitchResponse * Time.deltaTime));
     }
 
     float GetEstimatedRPMForGear(int gear)
