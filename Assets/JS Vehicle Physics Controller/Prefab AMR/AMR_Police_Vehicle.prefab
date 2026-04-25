@@ -861,20 +861,23 @@ MonoBehaviour:
   stabilityYawDamping: 2.25
   stabilityLateralDamping: 0.7
   gearRatios:
-  - 4
-  - 2.55
-  - 1.7
-  - 1.23
-  - 0.86
-  finalDriveRatio: 3.55
-  idleRPM: 700
-  maxEngineRPM: 5800
-  shiftThreshold: 4700
-  downshiftThreshold: 1750
-  shiftHysteresisRPM: 800
-  gearShiftDelay: 0.6
-  clutchResponse: 5.5
-  drivetrainTorqueScale: 0.5
+  - 5.2
+  - 3.45
+  - 2.15
+  - 1.45
+  - 1
+  finalDriveRatio: 3.05
+  idleRPM: 750
+  maxEngineRPM: 6100
+  shiftThreshold: 3800
+  downshiftThreshold: 2450
+  shiftHysteresisRPM: 180
+  gearShiftDelay: 0.24
+  clutchResponse: 12
+  drivetrainTorqueScale: 0.4
+  speedTorqueFadeStartKmph: 55
+  speedTorqueFadeEndKmph: 145
+  highSpeedTorqueMultiplier: 0.45
   enable4x4: 1
   frontLeftDustParticleSystem: {fileID: 6884106027164329529}
   frontRightDustParticleSystem: {fileID: 5222807419408461362}

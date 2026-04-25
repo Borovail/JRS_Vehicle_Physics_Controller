@@ -56,16 +56,19 @@ public class JrsVehicleController : MonoBehaviour
     public float stabilityLateralDamping = 0.7f;
 
     [Header("Transmission")]
-    public float[] gearRatios = { 4.0f, 2.55f, 1.7f, 1.23f, 0.86f };
-    public float finalDriveRatio = 3.55f;
-    public float idleRPM = 700f;
-    public float maxEngineRPM = 5800f;
-    public float shiftThreshold = 4700f;
-    public float downshiftThreshold = 1750f;
-    public float shiftHysteresisRPM = 800f;
-    public float gearShiftDelay = 0.6f;
-    public float clutchResponse = 5.5f;
-    public float drivetrainTorqueScale = 0.5f;
+    public float[] gearRatios = { 5.2f, 3.45f, 2.15f, 1.45f, 1.0f };
+    public float finalDriveRatio = 3.05f;
+    public float idleRPM = 750f;
+    public float maxEngineRPM = 6100f;
+    public float shiftThreshold = 3800f;
+    public float downshiftThreshold = 2450f;
+    public float shiftHysteresisRPM = 180f;
+    public float gearShiftDelay = 0.24f;
+    public float clutchResponse = 12f;
+    public float drivetrainTorqueScale = 0.4f;
+    public float speedTorqueFadeStartKmph = 55f;
+    public float speedTorqueFadeEndKmph = 145f;
+    public float highSpeedTorqueMultiplier = 0.45f;
     private int currentGear = 1; // Variable to track the current gear
 
     public bool enable4x4 = false; // Option to enable 4-wheel drive
@@ -168,7 +171,7 @@ public class JrsVehicleController : MonoBehaviour
         UpdateGear();
 
         // Adjust the motor torque based on the current gear ratio
-        float adjustedTorque = v * GetCurrentGearRatio() * Mathf.Max(0.01f, finalDriveRatio) * drivetrainTorqueScale;
+        float adjustedTorque = v * GetCurrentGearRatio() * Mathf.Max(0.01f, finalDriveRatio) * drivetrainTorqueScale * GetSpeedTorqueMultiplier();
         lastAdjustedTorque = adjustedTorque;
 
         // Apply motor torque to the wheels
@@ -273,10 +276,16 @@ public class JrsVehicleController : MonoBehaviour
         return gearRatios[Mathf.Clamp(currentGear - 1, 0, gearRatios.Length - 1)];
     }
 
+    float GetSpeedTorqueMultiplier()
+    {
+        float fade = Mathf.InverseLerp(speedTorqueFadeStartKmph, speedTorqueFadeEndKmph, lastSpeedKmph);
+        return Mathf.Lerp(1f, Mathf.Clamp01(highSpeedTorqueMultiplier), fade);
+    }
+
     void UpdateEngineRPM()
     {
         float connectedRPM = GetEstimatedRPMForGear(currentGear);
-        float launchRPM = Mathf.Lerp(idleRPM, idleRPM + 1300f, Mathf.Abs(lastThrottleInput));
+        float launchRPM = Mathf.Lerp(idleRPM, idleRPM + 1900f, Mathf.Abs(lastThrottleInput));
 
         if (lastSpeedKmph < 8f)
         {
