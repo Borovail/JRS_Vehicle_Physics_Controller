@@ -845,13 +845,36 @@ MonoBehaviour:
   - {fileID: 5801607900107558949}
   - {fileID: 5801607900770055130}
   brakeForce: 5000
+  enableDrift: 1
+  minimumDriftSpeedKmph: 12
+  handbrakeFrontBrakeRatio: 0
+  driftRearSidewaysStiffness: 0.55
+  driftRearForwardStiffness: 0.85
+  driftGripChangeSpeed: 6
+  driftYawAssist: 2.5
+  driftHoldSlipThreshold: 0.22
+  enableStabilityAssist: 1
+  highSpeedSteerAssistStartKmph: 45
+  highSpeedSteerAssistFullKmph: 120
+  highSpeedMaxSteerInput: 0.45
+  stabilitySlipThreshold: 0.28
+  stabilityYawDamping: 2.25
+  stabilityLateralDamping: 0.7
   gearRatios:
-  - 5.5
-  - 3.5
-  - 1.8
-  - 1.3
-  - 1
-  shiftThreshold: 2000
+  - 3.1
+  - 2.05
+  - 1.45
+  - 1.1
+  - 0.85
+  finalDriveRatio: 3.42
+  idleRPM: 850
+  maxEngineRPM: 6500
+  shiftThreshold: 5600
+  downshiftThreshold: 2200
+  shiftHysteresisRPM: 600
+  gearShiftDelay: 0.45
+  clutchResponse: 8
+  drivetrainTorqueScale: 0.55
   enable4x4: 1
   frontLeftDustParticleSystem: {fileID: 6884106027164329529}
   frontRightDustParticleSystem: {fileID: 5222807419408461362}
