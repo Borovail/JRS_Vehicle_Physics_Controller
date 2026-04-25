@@ -25,11 +25,9 @@ public class BurnableTower : MonoBehaviour
     [Header("Pollution Sphere")]
     [SerializeField] private SphereCollider pollutionSphere;
     [SerializeField, FormerlySerializedAs("scalableRoot")] private Transform pollutionVisualRoot;
-    [SerializeField, Min(0f), FormerlySerializedAs("minScaleMultiplier")] private float minPollutionRadius = 1f;
-    [SerializeField, Min(0f), FormerlySerializedAs("maxScaleMultiplier")] private float maxPollutionRadius = 4f;
+    [SerializeField, Min(1f), FormerlySerializedAs("maxScaleMultiplier"), FormerlySerializedAs("maxPollutionRadius")] private float maxPollutionScaleMultiplier = 4f;
     [SerializeField] private bool makePollutionSphereTrigger = true;
     [SerializeField] private bool disablePollutionWhenIgnited = true;
-    [SerializeField] private bool scalePollutionVisual;
 
     [Header("Ignition")]
     [SerializeField, FormerlySerializedAs("isIgnite")] private bool isIgnited;
@@ -40,12 +38,11 @@ public class BurnableTower : MonoBehaviour
     [Header("Fire Visual")]
     [SerializeField, FormerlySerializedAs("fireVisualRoot")] private Transform fireVisualRoot;
     [SerializeField, FormerlySerializedAs("fireSystems")] private ParticleSystem[] fireSystems;
-    [SerializeField] private bool activateFireObject = true;
-    [SerializeField, FormerlySerializedAs("minFireScale")] private float minFireScale = 0.25f;
-    [SerializeField, FormerlySerializedAs("maxFireScale")] private float maxFireScale = 2.4f;
-    [SerializeField] private bool syncFireEmission = true;
-    [SerializeField, FormerlySerializedAs("minEmissionRate")] private float minEmissionRate = 8f;
-    [SerializeField, FormerlySerializedAs("maxEmissionRate")] private float maxEmissionRate = 90f;
+
+    [Header("Destroy")]
+    [SerializeField] private bool destroyTowerWhenIgnited = true;
+    [SerializeField, Min(0f)] private float destroyDelay;
+    [SerializeField] private bool detachFireBeforeDestroy = true;
 
     [Header("Optional Burned State")]
     [SerializeField, FormerlySerializedAs("disableRenderersWhenBurned")] private bool disableRenderersWhenIgnited;
@@ -55,17 +52,17 @@ public class BurnableTower : MonoBehaviour
     private float growthTimer;
     private bool moneyRewardGiven;
     private Vector3 pollutionVisualBaseScale = Vector3.one;
-    private Vector3 fireVisualBaseScale = Vector3.one;
 
     public float Hp => hp;
     public float MaxHp => maxHp;
-    public float PollutionRadius => CalculatePollutionRadius();
+    public float PollutionScaleMultiplier => CalculatePollutionScaleMultiplier();
     public bool IsIgnited => isIgnited;
     public int MoneyReward => moneyReward;
 
     private void Reset()
     {
         pollutionSphere = GetComponent<SphereCollider>();
+        pollutionVisualRoot = pollutionSphere ? pollutionSphere.transform : transform;
         fireSystems = GetComponentsInChildren<ParticleSystem>(true);
 
         if (fireSystems != null && fireSystems.Length > 0 && fireSystems[0])
@@ -76,11 +73,11 @@ public class BurnableTower : MonoBehaviour
 
     private void Awake()
     {
-        CacheBaseScales();
         ResolveReferences();
+        CacheBaseScales();
         ClampValues();
         ApplyPollutionSphere();
-        ApplyIgnitedState(isIgnited, hp);
+        ApplyIgnitedState(isIgnited);
     }
 
     private void OnValidate()
@@ -92,8 +89,6 @@ public class BurnableTower : MonoBehaviour
         {
             CacheBaseScales();
         }
-
-        ApplyPollutionSphere(false);
     }
 
     private void Update()
@@ -133,7 +128,7 @@ public class BurnableTower : MonoBehaviour
 
         if (hp <= 0f)
         {
-            Ignite(hpBeforeDamage);
+            Ignite();
         }
     }
 
@@ -150,11 +145,6 @@ public class BurnableTower : MonoBehaviour
 
     public void Ignite()
     {
-        Ignite(Mathf.Max(hp, maxHp));
-    }
-
-    private void Ignite(float visualHp)
-    {
         if (isIgnited)
         {
             return;
@@ -165,7 +155,7 @@ public class BurnableTower : MonoBehaviour
         growthTimer = 0f;
 
         ApplyPollutionSphere();
-        ApplyIgnitedState(true, visualHp);
+        ApplyIgnitedState(true);
         GiveMoneyReward();
         onIgnited?.Invoke();
         AnyIgnited?.Invoke(this);
@@ -174,6 +164,8 @@ public class BurnableTower : MonoBehaviour
         {
             Debug.Log($"{name} ignited. Reward: {moneyReward}", this);
         }
+
+        DestroyTowerIfNeeded();
     }
 
     private void GiveMoneyReward()
@@ -188,50 +180,24 @@ public class BurnableTower : MonoBehaviour
         AnyMoneyRewarded?.Invoke(this, moneyReward);
     }
 
-    private void ApplyIgnitedState(bool ignited, float visualHp)
+    private void ApplyIgnitedState(bool ignited)
     {
-        SetFireActive(ignited, visualHp);
+        SetFireActive(ignited);
         SetRenderersEnabled(!ignited || !disableRenderersWhenIgnited);
     }
 
-    private void SetFireActive(bool active, float visualHp)
+    private void SetFireActive(bool active)
     {
-        if (fireVisualRoot)
-        {
-            if (activateFireObject && fireVisualRoot != transform)
-            {
-                fireVisualRoot.gameObject.SetActive(active);
-            }
-
-            if (active)
-            {
-                float scale = Mathf.Lerp(minFireScale, maxFireScale, GetHp01(visualHp));
-                fireVisualRoot.localScale = fireVisualBaseScale * scale;
-            }
-        }
-
         if (fireSystems == null)
         {
             return;
         }
 
-        float emissionRate = Mathf.Lerp(minEmissionRate, maxEmissionRate, GetHp01(visualHp));
         foreach (ParticleSystem fireSystem in fireSystems)
         {
             if (!fireSystem)
             {
                 continue;
-            }
-
-            if (activateFireObject && fireSystem.transform != transform)
-            {
-                fireSystem.gameObject.SetActive(active);
-            }
-
-            if (syncFireEmission)
-            {
-                ParticleSystem.EmissionModule emission = fireSystem.emission;
-                emission.rateOverTime = active ? emissionRate : 0f;
             }
 
             if (active)
@@ -241,6 +207,43 @@ public class BurnableTower : MonoBehaviour
             else
             {
                 fireSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+    }
+
+    private void DestroyTowerIfNeeded()
+    {
+        if (!destroyTowerWhenIgnited)
+        {
+            return;
+        }
+
+        if (detachFireBeforeDestroy)
+        {
+            DetachFireVisuals();
+        }
+
+        Destroy(gameObject, destroyDelay);
+    }
+
+    private void DetachFireVisuals()
+    {
+        if (fireVisualRoot && fireVisualRoot != transform && fireVisualRoot.IsChildOf(transform))
+        {
+            fireVisualRoot.SetParent(null, true);
+            return;
+        }
+
+        if (fireSystems == null)
+        {
+            return;
+        }
+
+        foreach (ParticleSystem fireSystem in fireSystems)
+        {
+            if (fireSystem && fireSystem.transform != transform && fireSystem.transform.IsChildOf(transform))
+            {
+                fireSystem.transform.SetParent(null, true);
             }
         }
     }
@@ -263,25 +266,22 @@ public class BurnableTower : MonoBehaviour
 
     private void ApplyPollutionSphere(bool updateVisual = true)
     {
-        float radius = isIgnited && disablePollutionWhenIgnited ? 0f : CalculatePollutionRadius();
-
         if (pollutionSphere)
         {
             pollutionSphere.isTrigger = makePollutionSphereTrigger;
-            pollutionSphere.enabled = radius > 0f;
-            pollutionSphere.radius = radius;
+            pollutionSphere.enabled = !isIgnited || !disablePollutionWhenIgnited;
         }
 
-        if (updateVisual && pollutionVisualRoot && scalePollutionVisual)
+        if (updateVisual && pollutionVisualRoot)
         {
-            float visualScale = minPollutionRadius > 0f ? radius / minPollutionRadius : radius;
-            pollutionVisualRoot.localScale = pollutionVisualBaseScale * Mathf.Max(0f, visualScale);
+            float scale = CalculatePollutionScaleMultiplier();
+            pollutionVisualRoot.localScale = pollutionVisualBaseScale * Mathf.Max(0f, scale);
         }
     }
 
-    private float CalculatePollutionRadius()
+    private float CalculatePollutionScaleMultiplier()
     {
-        return Mathf.Lerp(minPollutionRadius, maxPollutionRadius, GetHp01(hp));
+        return Mathf.Lerp(1f, maxPollutionScaleMultiplier, GetHp01(hp));
     }
 
     private float GetHp01(float health)
@@ -294,6 +294,11 @@ public class BurnableTower : MonoBehaviour
         if (!pollutionSphere)
         {
             pollutionSphere = GetComponent<SphereCollider>();
+        }
+
+        if (!pollutionVisualRoot && pollutionSphere)
+        {
+            pollutionVisualRoot = pollutionSphere.transform;
         }
 
         if ((fireSystems == null || fireSystems.Length == 0) && fireVisualRoot)
@@ -317,12 +322,8 @@ public class BurnableTower : MonoBehaviour
         hp = Mathf.Clamp(hp, 0f, maxHp);
         hpGrowthValue = Mathf.Max(0f, hpGrowthValue);
         hpGrowthTime = Mathf.Max(0.01f, hpGrowthTime);
-        minPollutionRadius = Mathf.Max(0f, minPollutionRadius);
-        maxPollutionRadius = Mathf.Max(minPollutionRadius, maxPollutionRadius);
-        minFireScale = Mathf.Max(0f, minFireScale);
-        maxFireScale = Mathf.Max(minFireScale, maxFireScale);
-        minEmissionRate = Mathf.Max(0f, minEmissionRate);
-        maxEmissionRate = Mathf.Max(minEmissionRate, maxEmissionRate);
+        maxPollutionScaleMultiplier = Mathf.Max(1f, maxPollutionScaleMultiplier);
+        destroyDelay = Mathf.Max(0f, destroyDelay);
         moneyReward = Mathf.Max(0, moneyReward);
     }
 
@@ -333,15 +334,21 @@ public class BurnableTower : MonoBehaviour
             pollutionVisualBaseScale = pollutionVisualRoot.localScale;
         }
 
-        if (fireVisualRoot)
-        {
-            fireVisualBaseScale = fireVisualRoot.localScale;
-        }
     }
 
     private void OnDrawGizmosSelected()
     {
+        if (!pollutionSphere)
+        {
+            return;
+        }
+
         Gizmos.color = isIgnited ? Color.red : new Color(1f, 0.55f, 0f, 0.35f);
-        Gizmos.DrawWireSphere(transform.position, CalculatePollutionRadius());
+        Gizmos.DrawWireSphere(pollutionSphere.transform.TransformPoint(pollutionSphere.center), pollutionSphere.radius * GetLargestAxis(pollutionSphere.transform.lossyScale));
+    }
+
+    private float GetLargestAxis(Vector3 scale)
+    {
+        return Mathf.Max(Mathf.Abs(scale.x), Mathf.Max(Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
     }
 }

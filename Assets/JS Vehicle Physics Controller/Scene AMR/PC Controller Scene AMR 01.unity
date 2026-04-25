@@ -1693,7 +1693,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.15
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &292055536
 MeshRenderer:
@@ -4316,11 +4316,9 @@ MonoBehaviour:
   hpGrowthTime: 1
   pollutionSphere: {fileID: 292055535}
   pollutionVisualRoot: {fileID: 292055534}
-  minPollutionRadius: 1
-  maxPollutionRadius: 4
+  maxPollutionScaleMultiplier: 4
   makePollutionSphereTrigger: 1
   disablePollutionWhenIgnited: 1
-  scalePollutionVisual: 1
   isIgnited: 0
   moneyReward: 10
   onIgnited:
@@ -4334,12 +4332,9 @@ MonoBehaviour:
   - {fileID: 254586164}
   - {fileID: 309183752}
   - {fileID: 347869156}
-  activateFireObject: 1
-  minFireScale: 0.25
-  maxFireScale: 2.4
-  syncFireEmission: 1
-  minEmissionRate: 8
-  maxEmissionRate: 90
+  destroyTowerWhenIgnited: 1
+  destroyDelay: 0
+  detachFireBeforeDestroy: 1
   disableRenderersWhenIgnited: 0
   renderersToDisable: []
   showDebug: 0
