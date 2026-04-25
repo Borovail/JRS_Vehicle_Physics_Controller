@@ -66,6 +66,9 @@ public class JrsVehicleController : MonoBehaviour
     public float gearShiftDelay = 0.24f;
     public float clutchResponse = 12f;
     public float drivetrainTorqueScale = 0.4f;
+    public int lowGearHoldUntilGear = 3;
+    public float lowGearShiftThresholdBonus = 850f;
+    public float lowGearShiftDelay = 0.42f;
     public float speedTorqueFadeStartKmph = 55f;
     public float speedTorqueFadeEndKmph = 145f;
     public float highSpeedTorqueMultiplier = 0.45f;
@@ -88,6 +91,13 @@ public class JrsVehicleController : MonoBehaviour
     public float engineLoadPitchBoost = 0.14f;
     public float enginePitchResponse = 3.5f;
 
+    [Header("Coasting")]
+    public float throttleDeadZone = 0.05f;
+    public float coastBrakeTorque = 180f;
+    public float coastBrakeMaxSpeedKmph = 45f;
+    public float stopBrakeTorque = 450f;
+    public float autoStopSpeedKmph = 0.35f;
+
     private bool hasStartedMoving = false;
     private WheelCollider[] cachedWheels;
     private WheelFrictionCurve[] defaultForwardFrictions;
@@ -102,6 +112,7 @@ public class JrsVehicleController : MonoBehaviour
     private float lastSteerInput;
     private float lastEffectiveSteerInput;
     private float lastAdjustedTorque;
+    private float lastCoastBrakeTorque;
     private float lastRearSidewaysSlip;
     private float gearShiftTimer;
     private bool isHandbrakeActive;
@@ -194,6 +205,7 @@ public class JrsVehicleController : MonoBehaviour
         frontRightWheel.steerAngle = h;
 
         ApplyHandbrake();
+        ApplyCoastBrake();
         lastRearSidewaysSlip = GetAverageRearSidewaysSlip();
         UpdateDriftPhysics();
         UpdateStabilityAssist();
@@ -366,9 +378,11 @@ public class JrsVehicleController : MonoBehaviour
             return;
         }
 
+        bool isLowGear = currentGear <= lowGearHoldUntilGear;
+        float currentShiftThreshold = shiftThreshold + (isLowGear ? lowGearShiftThresholdBonus : 0f);
         bool shouldForceUpshift = lastEngineRPM > maxEngineRPM;
 
-        if ((lastEngineRPM > shiftThreshold || shouldForceUpshift) && currentGear < gearCount)
+        if ((lastEngineRPM > currentShiftThreshold || shouldForceUpshift) && currentGear < gearCount)
         {
             float nextGearRPM = GetEstimatedRPMForGear(currentGear + 1);
             if (!shouldForceUpshift && nextGearRPM < downshiftThreshold + shiftHysteresisRPM)
@@ -377,18 +391,19 @@ public class JrsVehicleController : MonoBehaviour
             }
 
             currentGear++;
-            gearShiftTimer = gearShiftDelay;
+            gearShiftTimer = currentGear <= lowGearHoldUntilGear ? lowGearShiftDelay : gearShiftDelay;
         }
         else if ((lastEngineRPM < downshiftThreshold || lastSpeedKmph < stopSpeedThreshold) && currentGear > 1)
         {
             float previousGearRPM = GetEstimatedRPMForGear(currentGear - 1);
-            if (previousGearRPM > shiftThreshold - shiftHysteresisRPM && lastSpeedKmph >= stopSpeedThreshold)
+            float previousShiftThreshold = shiftThreshold + (currentGear - 1 <= lowGearHoldUntilGear ? lowGearShiftThresholdBonus : 0f);
+            if (previousGearRPM > previousShiftThreshold - shiftHysteresisRPM && lastSpeedKmph >= stopSpeedThreshold)
             {
                 return;
             }
 
             currentGear--;
-            gearShiftTimer = gearShiftDelay;
+            gearShiftTimer = currentGear <= lowGearHoldUntilGear ? lowGearShiftDelay : gearShiftDelay;
         }
     }
 
@@ -436,6 +451,30 @@ public class JrsVehicleController : MonoBehaviour
         if (wheel)
         {
             wheel.brakeTorque = torque;
+        }
+    }
+
+    void ApplyCoastBrake()
+    {
+        lastCoastBrakeTorque = 0f;
+
+        if (isHandbrakeActive || Mathf.Abs(lastThrottleInput) > throttleDeadZone)
+        {
+            return;
+        }
+
+        float speedFactor = Mathf.InverseLerp(0f, coastBrakeMaxSpeedKmph, lastSpeedKmph);
+        lastCoastBrakeTorque = Mathf.Lerp(stopBrakeTorque, coastBrakeTorque, speedFactor);
+
+        SetBrakeTorque(frontLeftWheel, lastCoastBrakeTorque);
+        SetBrakeTorque(frontRightWheel, lastCoastBrakeTorque);
+        SetBrakeTorque(rearLeftWheel, lastCoastBrakeTorque);
+        SetBrakeTorque(rearRightWheel, lastCoastBrakeTorque);
+
+        if (lastSpeedKmph <= autoStopSpeedKmph)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
         }
     }
 
@@ -646,6 +685,7 @@ public class JrsVehicleController : MonoBehaviour
         GUILayout.Label($"Throttle: {lastThrottleInput:0.00}");
         GUILayout.Label($"Steer: {lastSteerInput:0.00} -> {lastEffectiveSteerInput:0.00}");
         GUILayout.Label($"Torque: {lastAdjustedTorque:0}");
+        GUILayout.Label($"Coast brake: {lastCoastBrakeTorque:0}");
         GUILayout.Space(6f);
         GUILayout.Label($"Handbrake: {isHandbrakeActive}");
         GUILayout.Label($"Drifting: {isDrifting}");

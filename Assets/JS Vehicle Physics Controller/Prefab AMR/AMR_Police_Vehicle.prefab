@@ -875,6 +875,9 @@ MonoBehaviour:
   gearShiftDelay: 0.24
   clutchResponse: 12
   drivetrainTorqueScale: 0.4
+  lowGearHoldUntilGear: 3
+  lowGearShiftThresholdBonus: 850
+  lowGearShiftDelay: 0.42
   speedTorqueFadeStartKmph: 55
   speedTorqueFadeEndKmph: 145
   highSpeedTorqueMultiplier: 0.45
@@ -889,6 +892,11 @@ MonoBehaviour:
   engineMaxPitch: 1.45
   engineLoadPitchBoost: 0.14
   enginePitchResponse: 3.5
+  throttleDeadZone: 0.05
+  coastBrakeTorque: 180
+  coastBrakeMaxSpeedKmph: 45
+  stopBrakeTorque: 450
+  autoStopSpeedKmph: 0.35
 --- !u!54 &2199125344732967282
 Rigidbody:
   m_ObjectHideFlags: 0
